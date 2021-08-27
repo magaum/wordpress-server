@@ -107,6 +107,8 @@ Os comandos `terraform init` e `terraform appy` são obrigatórios para criaçã
 
 Executando o comando `terraform apply -auto-approve` a validação é automaticamente aprovada.
 
+**Importante**: Executar este lab tem custo devido ao Nat Gateway.
+
 ### Configuração pós implantação
 
 Os valores entre colchetes utilizados nesta seção deverão ser substituidos em testes locais.
