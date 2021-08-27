@@ -10,11 +10,11 @@ Componentes:
 
 ### VPC
 
-Rede privada envolvendo os componentes
+Rede privada envolvendo os recursos
 
 ### Public subnet
 
-Sub-rede com componentes que possibilitam o acesso externo aos componentes existentes:
+Sub-rede com recursos publicos ou que possibilitam o acesso externo:
 
 - ALB: Application Load Balancer para redirecionar as requisições recebidas em seu DNS público para o servidor web existente na subnet privada.
 - Internet Gateway: Habilita acesso a internet aos recursos da VPC.
@@ -29,7 +29,7 @@ Sub-rede para o servidor web (EC2):
 - Security group:
   - HTTP liberado publicamente;
   - SSH liberado na VPC (10.0.0.0/22).
-- EC2: Servidor web com acesso ao banco de dados RDS, a única forma de acesso ao bash é via bastion, não é possível acessá-lo diretamente via internet, apenas via HTTP. Para baixar pacotes como o client do MySQL e PHP é utilizado o Nat Gateway mencionado anteriorment, a instância EC2 é direcionada para o Nat Gateway que por sua vez encaminha a requisição para o Internet Gateway possibilitando o acesso a internet pela instância.
+- EC2: Servidor web com acesso ao banco de dados RDS, a única forma de acesso ao bash é via bastion, não é possível acessá-lo diretamente via internet, apenas via HTTP (redirecionado pelo ALB). Para baixar pacotes como o client do MySQL e PHP é utilizado o Nat Gateway mencionado anteriormente, a instância EC2 é direcionada para o Nat Gateway que por sua vez encaminha a requisição para o Internet Gateway possibilitando o acesso a internet pela instância.
 
 ### Private database subnet
 
@@ -52,42 +52,39 @@ A infraestrutura criada precisa das seguintes variáveis para funcionar corretam
 | master_rds_user          | Nome do usuário master (root)                                   |               |
 | master_rds_user_password | Senha do usuário master                                         |               |
 
-**Importante**: A [documentação](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) do terraform orienta que a criação da [Key Pair](https://docs.aws.amazon.com/pt_br/AWSEC2/latest/UserGuide/ec2-key-pairs.html) seja feita via console ou fora dos arquivos terraform para não serem armazenados nos arquivos de estado. O direcionamento é que apenas o nome da Key Pair seja utilizado nos arquivos ".tf".
-Caso a chave `wordpress-lab` não exista região em que o ambiente será publicado (us-east-1) a infra não será criada. As Keys Pairs podem ser substituidas atribuido as variáveis `bastion_key_name` e `web_server_key_name` novos valores, este processo será detalhado abaixo.
+**Importante**: A [documentação](https://registry.terraform.io/providers/hashicorp/tls/latest/docs/resources/private_key) do terraform orienta que a criação da [Key Pair](https://docs.aws.amazon.com/pt_br/AWSEC2/latest/UserGuide/ec2-key-pairs.html) seja feita fora dos arquivos ".tf" para não serem armazenados nos arquivos de estado do terraform. O direcionamento é que apenas o nome da Key Pair seja utilizado nos arquivos ".tf".
+
+Caso a chave `wordpress-lab` não exista região em que o ambiente será publicado - **us-east-1** por padrão, essa configuração pode ser alterada no arquivo [main.tf](terraform/main.tf) - a infra não será criada. As Keys Pairs podem ser substituidas atribuido as variáveis `bastion_key_name` e `web_server_key_name` novos valores, este processo será detalhado nas próximas seções.
 
 ### Variáveis de ambiente
 
 Para criar variáveis que serão identificadas pelo terraform o prefixo **TF_VAR\_** precisa ser utilizado.
 
-#### Powershell
-
-Criar variáveis no powershell:
+#### Criar variáveis no Powershell:
 
 ```powershell
-$env:TF_VAR_wordpress_database = 'exemplo'
-$env:TF_VAR_wordpress_user = 'usuario wordpress'
-$env:TF_VAR_wordpress_user_password = 'senha super secreta'
 $env:TF_VAR_master_rds_user = 'usuario root'
-$env:TF_VAR_master_rds_user_password = 'outra senha super secreta'
+$env:TF_VAR_master_rds_user_password = 'senha super secreta'
+$env:TF_VAR_wordpress_user = 'usuario wordpress'
+$env:TF_VAR_wordpress_user_password = 'outra senha super secreta'
+$env:TF_VAR_wordpress_database = 'exemplo'
 $env:TF_VAR_bastion_key_name = 'bastion-key-pair'
 $env:TF_VAR_web_server_key_name = 'web-server-key-pair'
 ```
 
-#### Shell
-
-Criar variáveis no shell:
+#### Criar variáveis no bash:
 
 ```sh
-export TF_VAR_wordpress_database = 'exemplo'
-export TF_VAR_wordpress_user = 'usuario wordpress'
-export TF_VAR_wordpress_user_password= 'senha super secreta'
 export TF_VAR_master_rds_user = 'usuario root'
-export TF_VAR_master_rds_user_password = 'outra senha super secreta'
+export TF_VAR_master_rds_user_password = 'senha super secreta'
+export TF_VAR_wordpress_user = 'usuario wordpress'
+export TF_VAR_wordpress_user_password= 'outra senha super secreta'
+export TF_VAR_wordpress_database = 'exemplo'
 export TF_VAR_bastion_key_name = 'bastion-key-pair'
 export TF_VAR_web_server_key_name = 'web-server-key-pair'
 ```
 
-**Observação**: Criando as as variáveis `TF_VAR_bastion_key_name` e `TF_VAR_web_server_key_name` com os valores acima o padrão "wordpress-lab" definido nas variáveis bastion_key_name e web_server_key_name serão substituidos por **bastion-key-pair** e **web-server-key-pair**, respectivamente.
+**Observação**: Criando as as variáveis `TF_VAR_bastion_key_name` e `TF_VAR_web_server_key_name` com os valores acima o padrão "wordpress-lab" definido nas variáveis `bastion_key_name` e `web_server_key_name` serão substituidas com os valores **bastion-key-pair** e **web-server-key-pair**, respectivamente.
 
 #### Variáveis obrigatórias para execução
 
@@ -105,7 +102,7 @@ A infraestrutura é provisionada a partir dos comandos a seguir:
 
 Os comandos `terraform init` e `terraform appy` são obrigatórios para criação da infraestrutura via [terraform cli](https://learn.hashicorp.com/tutorials/terraform/install-cli?in=terraform/aws-get-started).
 
-Executando o comando `terraform apply -auto-approve` a validação é automaticamente aprovada.
+Executando o comando `terraform apply -auto-approve` a solicitação de aprovação não é exibida.
 
 **Importante**: Executar este lab tem custo devido ao Nat Gateway.
 
@@ -113,14 +110,14 @@ Executando o comando `terraform apply -auto-approve` a validação é automatica
 
 Os valores entre colchetes utilizados nesta seção deverão ser substituidos em testes locais.
 
-Quando a execução finalizar 4 outputs serão exibidos conforme tabela e imagem abaixo:
+Quando a execução finalizar 4 outputs serão exibidos conforme imagem e tabela abaixo:
 
 ![output](docs/output.png)
 
 | Output                     | Descrição                                   |
 | -------------------------- | ------------------------------------------- |
+| alb_public_dns             | Endereço do application load balancer       |
 | bastion_ec2_public_address | DNS público para conexão com Bastion        |
-| alb_public_dns              | Endereço do application load balancer       |
 | db_endpoint                | Endpoint de conexão com o banco de dados    |
 | web_server_ec2_ip_address  | Endereço ipv4 para conexão com servidor web |
 
@@ -136,9 +133,9 @@ Com a configuração feita corretamente a seguinte tela será exibida, solicitan
 
 ![configuracao concluida wordpress](docs/wordpress-wp-config.png)
 
-Para adicionar este conteúdo no arquivo `wp-config.php` o web server precisa ser acessado, conforme mencionado anteriormente a instância web só pode ser acessada por recursos em sua VPC, então o acesso será feito a partir do bastion.
+Para adicionar este conteúdo no arquivo `wp-config.php` o web server precisa ser acessado, porém, conforme mencionado anteriormente, a instância web não pode ser acessada publicamente, apenas por recursos em sua VPC, então o acesso será feito a partir do bastion.
 
-Sem a chave privada de acesso a web server o bastion também não possui acesso ao servidor, então sua chave privada (.pem) deve ser copiada com o comando SCP.
+Sem a chave privada de acesso o bastion também não conseguirá conectar ao servidor web, para que isso seja possível, a chave privada (.pem) do servidor deve ser copiada com o comando SCP.
 
 ```sh
 scp -i [bastion_key_name].pem [web_server_key_name].pem ec2-user@[DNS bastion]:/home/ec2-user
@@ -147,6 +144,7 @@ scp -i [bastion_key_name].pem [web_server_key_name].pem ec2-user@[DNS bastion]:/
 Em casos de erro ao executar o SCP ou SSH as [permissões](https://docs.aws.amazon.com/pt_br/AWSEC2/latest/UserGuide/TroubleshootingInstancesConnecting.html#troubleshoot-unprotected-key) da chave .pem devem ser revisadas e alteradas preferencialmente, a [AWS](https://docs.aws.amazon.com/pt_br/AWSEC2/latest/UserGuide/ec2-key-pairs.html) exige a permissão 400, ela pode ser alterada com o comando chmod.
 
 ```sh
+chmod 400 [bastion_key_name].pem
 chmod 400 [web_server_key_name].pem
 ```
 
@@ -162,7 +160,7 @@ Conectado ao bastion o web server precisa ser acessado para que o arquivo `wp-co
 ssh -i [bastion_key_name].pem ec2-user@[web_server_ec2_ip_address]
 ```
 
-**Importante**: A permissão precisa ser alterada para 400 conforme mencionado anteriormente, caso contrário o bastion não conseguirá acessar o web server.
+**Importante**: A permissão da key pair precisa ser alterada para 400 conforme mencionado anteriormente, caso contrário o bastion não conseguirá acessar o web server.
 
 O arquivo `wp-config.php` pode ser criado com o comando vim.
 
@@ -170,9 +168,9 @@ O arquivo `wp-config.php` pode ser criado com o comando vim.
 sudo vim /var/www/html/wp-config.php
 ```
 
-Com o arquivo criado seu conteúdo deve ser adicionado, porém aperte `i` antes de colar para que o editor vim entre em modo de inserção. Para salvar o conteúdo adicionado a opção `:x` pode ser utilizada.
+Com o arquivo criado, seu conteúdo deve ser adicionado, porém aperte `i` antes de colar para que o editor vim entre em modo de inserção. Para salvar o conteúdo adicionado a opção `:x` pode ser utilizada.
 
-Com o arquivo `wp-config.php` criado e salvo corretamente ao acessar o endereço do ALB novamente a página de configuração do administrador do site será exibida.
+Após salvar o arquivo `wp-config.php` e acessar o endereço do ALB novamente a página de configuração do administrador do site será exibida.
 
 ![configuracao adm wordpress](docs/adm-wordpress.png)
 
@@ -186,7 +184,7 @@ Feita a configuração e as tabelas criadas o site já pode ser acessado com o a
 
 ![configuracao adm wordpress](docs/wordpress-inicio-adm.png)
 
-Para validar que as tabelas foram criadas o banco pode ser acessado com o comando `mysql`.
+Para validar a criação das tabelas o banco de dados pode ser acessado - do web server o bastion não possui acesso ao RDS - com o comando `mysql`.
 
 ```
 mysql -u [master_rds_user] -h [db_endpoint] -p[master_rds_user_password]
@@ -206,11 +204,12 @@ O acesso ao bastion também é evidenciado devido a mensagem "Connection to ec2-
 
 ### Desalocando recursos
 
-O comando `terraform destroy -auto-approve` pode ser executado para remover todos os recursos criados via arquivos terraform. A opção `-auto-approve` não é obrigatória, se ela não for adicionada ao comando destroy será solicitada aprovação, quando o comando finalizar a mensagem "Destroy complete! Resources: X destroyed." será exibida, onde X é o número de recursos criados pelo `terraform apply`.
+O comando `terraform destroy -auto-approve` deve ser executado para remover todos os recursos criados via terraform. A opção `-auto-approve` não é obrigatória, se ela não for adicionada ao comando destroy será solicitada aprovação, quando o comando finalizar a mensagem: "Destroy complete! Resources: X destroyed." será exibida, onde X é o número de recursos criados pelo `terraform apply`.
 
 ### Curiosidades
 
-O ambiente web é provisionado via shell script, no arquivo [wordpress.sh](terraform/scripts/wordpress.sh) todos os passos para instalação do wordpress e suas dependências, apache web server, php7, mysql client estão declarados.
+O ambiente web é provisionado via shell script, no arquivo [wordpress.sh](terraform/scripts/wordpress.sh) todos os passos para instalação do wordpress e suas dependências como: apache web server, php7, mysql client estão declarados.
+
 A propriedade `user_data` do [web-server.tf](terraform/web-server.tf) foi utilizada para executar o script na inicialização da instância, então sempre que uma nova instância for criada as configurações iniciais do wordpress estarão preparadas.
 
 Analisando o arquivo `cloud-init-output.log` é possível listar os logs da execução de scripts adicionados ao `user_data` para troubleshooting.
@@ -219,4 +218,4 @@ Analisando o arquivo `cloud-init-output.log` é possível listar os logs da exec
 sudo cat /var/log/cloud-init-output.log
 ```
 
-É importante frisar que este é um estudo de caso, em um ambiente produtivo onde o provisionamento de outras máquinas é utilizado com auto scaling o ideal seria criar uma AMI com o ambiente configurado lendo as configurações do wordpress de variáveis de ambiente.
+É importante frisar que este é um estudo de caso, em um ambiente produtivo onde o provisionamento de outras máquinas é feito com auto scaling o ideal seria criar uma AMI com o ambiente configurado lendo as configurações do wordpress de variáveis de ambiente.
