@@ -60,6 +60,6 @@ module "s3_bucket_alb" {
   attach_lb_log_delivery_policy  = true
 }
 
-output "alb_public_ip" {
+output "alb_public_dns" {
   value = module.alb.lb_dns_name
 }
