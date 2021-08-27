@@ -47,5 +47,5 @@ module "db" {
 
 output "db_endpoint" {
   description = "RDS endpoint to connect"
-  value = module.db.db_instance_endpoint
+  value = split(":", module.db.db_instance_endpoint)[0]
 }

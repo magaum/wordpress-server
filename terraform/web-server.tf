@@ -1,4 +1,4 @@
-module "ec2_cluster" {
+module "ec2_web_server" {
   source  = "terraform-aws-modules/ec2-instance/aws"
   version = "~> 2.0"
 
@@ -7,13 +7,14 @@ module "ec2_cluster" {
   ami                         = var.amazon_linux
   instance_type               = "t2.micro"
   monitoring                  = true
-  associate_public_ip_address = true
-  key_name                    = "ec2-lab"
+  associate_public_ip_address = false
+  key_name                    = var.web_server_key_name
+  
   vpc_security_group_ids = [
     module.http_80_security_group.security_group_id,
-    module.ssh_security_group.security_group_id
+    module.local_ssh_security_group.security_group_id
   ]
-  subnet_ids = module.vpc.public_subnets
+  subnet_ids = module.vpc.private_subnets
 
   user_data = data.template_file.wordpress_setup.rendered
 
@@ -22,8 +23,8 @@ module "ec2_cluster" {
   }
 }
 
-output "ecs_public_address" {
-  value = module.ec2_cluster.public_dns
+output "web_server_ec2_ip_address" {
+  value = module.ec2_web_server.private_ip
 }
 
 data "template_file" "wordpress_setup" {

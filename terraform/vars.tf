@@ -17,6 +17,20 @@ variable "wordpress_database" {
   default = "wordpress"
 }
 
+variable "bastion_key_name" {
+  sensitive = true
+  type        = string
+  description = "Bastion key pair name"
+  default = "wordpress-lab"
+}
+
+variable "web_server_key_name" {
+  sensitive = true
+  type        = string
+  description = "Web server key pair name"
+  default = "wordpress-lab"
+}
+
 variable "wordpress_user" {
   sensitive   = true
   type        = string

@@ -11,6 +11,7 @@ module "vpc" {
   azs = [for az in data.aws_availability_zones.azs.names : az]
 
   public_subnets   = [cidrsubnet(var.cidr, 4, 0), cidrsubnet(var.cidr, 4, 1)]
+  private_subnets   = [cidrsubnet(var.cidr, 4, 2), cidrsubnet(var.cidr, 4, 3)]
   database_subnets = [cidrsubnet(var.cidr, 4, 4), cidrsubnet(var.cidr, 4, 5)]
 
   enable_dns_hostnames = true

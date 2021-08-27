@@ -15,10 +15,10 @@ sudo yum install -y mysql-community-server
 sudo systemctl enable mysqld
 
 # Start mysql service
-sudo systemctl mysqld start
+sudo systemctl start mysqld
 
 # Wait for service start
-sleep 2
+sleep 5
 
 # PHP wordpress dependency, must be version 5.20 at least
 sudo amazon-linux-extras install php7.2 -y
@@ -44,13 +44,9 @@ sudo mv /tmp/wordpress/* /var/www/html/
 # Changing permission of wordpress files
 sudo chmod -R 755 /var/www/html/*
 
-# Create user
-sudo mysql -u ${master_rds_user} -h ${host} -p${master_rds_user_password} << EOF
-CREATE USER ${wordpress_user}@'%' IDENTIFIED BY '${wordpress_user_password}';
-EOF
-
-# Grant permission to wordpress database
-sudo mysql -u ${master_rds_user} -h ${host} -p${master_rds_user_password} << EOF
-GRANT ALL PRIVILEGES ON ${wordpress_database}.* TO ${wordpress_user}@'%';
+# Create user and grant permission to wordpress database
+sudo mysql -u ${master_rds_user} -h ${host} -p"${master_rds_user_password}" << EOF
+CREATE USER ${wordpress_user}@"%" IDENTIFIED BY "${wordpress_user_password}";
+GRANT ALL PRIVILEGES ON ${wordpress_database}.* TO ${wordpress_user}@"%";
 FLUSH PRIVILEGES;
 EOF

@@ -1,9 +1,10 @@
 module "mysql_security_group" {
   source              = "terraform-aws-modules/security-group/aws//modules/mysql"
   version             = "~> 4.0"
-  name                = "Allow-database-access-from-vpc"
+  name                = "Allow-database-access"
+  description = "Allow database access from vpc"
   vpc_id              = module.vpc.vpc_id
-  ingress_cidr_blocks = [var.cidr]
+  ingress_cidr_blocks = module.vpc.private_subnets_cidr_blocks
 }
 
 module "http_80_security_group" {
@@ -14,10 +15,20 @@ module "http_80_security_group" {
   ingress_cidr_blocks = ["0.0.0.0/0"]
 }
 
-module "ssh_security_group" {
+module "bastion_ssh_security_group" {
   source              = "terraform-aws-modules/security-group/aws//modules/ssh"
   version             = "~> 4.0"
   vpc_id              = module.vpc.vpc_id
   name                = "Allow-ssh"
-  ingress_cidr_blocks = ["0.0.0.0/0"] //TODO remover
+  description = "Allow public ssh"
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+}
+
+module "local_ssh_security_group" {
+  source              = "terraform-aws-modules/security-group/aws//modules/ssh"
+  version             = "~> 4.0"
+  vpc_id              = module.vpc.vpc_id
+  name                = "Allow-ssh-from"
+  description = "Allow ssh from vpc cidr"
+  ingress_cidr_blocks = [var.cidr]
 }
