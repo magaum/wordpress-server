@@ -220,4 +220,3 @@ sudo cat /var/log/cloud-init-output.log
 ```
 
 É importante frisar que este é um estudo de caso, em um ambiente produtivo onde o provisionamento de outras máquinas é utilizado com auto scaling o ideal seria criar uma AMI com o ambiente configurado lendo as configurações do wordpress de variáveis de ambiente.
-```
